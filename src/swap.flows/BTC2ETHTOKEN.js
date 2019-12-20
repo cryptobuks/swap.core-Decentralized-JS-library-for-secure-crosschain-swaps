@@ -606,11 +606,7 @@ export default (tokenName) => {
 
     tryRefund() {
       const flow = this
-      const { isRefunded, btcScriptValues, secret } = flow.state
-
-      if (isRefunded) {
-        return false
-      }
+      const { btcScriptValues, secret } = flow.state
 
       return flow.btcSwap.refund({
         scriptValues: btcScriptValues,
@@ -634,9 +630,18 @@ export default (tokenName) => {
           return true
         })
         .catch((error) => {
-          console.warn('Btc withdraw:', error)
+          if (/Address is empty/.test(error)) {
+            // TODO - fetch TX list to script for refund TX
+            flow.setState({
+              isRefunded: true,
+              isSwapExist: false,
+            }, true)
+            return true
+          } else {
+            console.warn('Btc refund:', error)
 
-          return false
+            return false
+          }
         })
     }
 
